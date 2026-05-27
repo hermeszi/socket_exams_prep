@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h> // To use socket(), bind(), listen()
 #include <netinet/in.h> // For sockaddr_in
@@ -135,15 +136,77 @@ int main(int argc, char *argv[])
                     // Add to pfds array
                     // Add to clients array
                     // Broadcast "server: client %d just arrived\n" to all existing clients
-                    int client_fd = accept()
+                    int client_fd = accept(sockfd, NULL, NULL);
+                    if (client_fd < 0)
+                    {
+                        fatal_error();
+                    }
+                    pfds[nfds].fd = client_fd;
+                    pfds[nfds++].events = POLLIN;
+
+                    clients[client_fd].fd = client_fd;
+                    clients[client_fd].id = next_id++;
+                    clients[client_fd].buf = NULL;
+
+                    char msg[128];
+                    snprintf(msg, sizeof(msg), "server: client %d just arrived\n", clients[client_fd].id);
+                    for (int j = 0; j < nfds; ++j)
+                    {
+                        if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
+                        {
+                            send(pfds[j].fd, msg, strlen(msg), 0);
+                        }
+                    }
                 }
                 else
                 {
                     //client msg or disconnection
-                }          
-            }
+                    int client_fd = pfds[i].fd;
+                    char buffer[1024];
+                    int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+                    if (bytes > 0)
+                    {
+                        buffer[bytes] = '\0';  // null terminate
+                        clients[client_fd].buf = str_join(clients[client_fd].buf, buffer);
+                        char *msg;
+                        while (extract_message(&clients[client_fd].buf, &msg))
+                        {
+                            for (int j = 0; j < nfds; ++j)
+                            {
+                                if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
+                                {
+                                    char prefix[64];
+                                    snprintf(prefix, sizeof(prefix), "client %d: ", clients[client_fd].id);
+                                    send(pfds[j].fd, prefix, strlen(prefix), 0);
+                                    send(pfds[j].fd, msg, strlen(msg), 0);
+                                }
+                            }
+                            free(msg);
+                        }
+                    }
+                    else
+                    {
+                        // disconnect
+                        char msg[128];
+                        snprintf(msg, sizeof(msg), "server: client %d just left\n", clients[client_fd].id);
+                        for (int j = 0; j < nfds; ++j)
+                        {
+                            if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
+                            {
+                                send(pfds[j].fd, msg, strlen(msg), 0);
+                            }
+                        }
+                        free(clients[client_fd].buf);
+                        bzero(&clients[client_fd], sizeof(t_client));
+                        pfds[i] = pfds[nfds - 1];
+                        nfds--;
+                        i--;
+                        close(client_fd);
+                    }
+                }
+            }          
         }
     }
-
+    
     return 0;
 }
