@@ -1,13 +1,12 @@
+#include <errno.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <string.h>     // For memset()
 #include <sys/socket.h> // To use socket(), bind(), listen()
 #include <netinet/in.h> // For sockaddr_in
-#include <string.h>     // For memset()
-#include <poll.h>
-#include <errno.h>
-#include <string.h>
 #include <netdb.h>
+#include <poll.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 int extract_message(char **buf, char **msg)
 {
@@ -125,11 +124,11 @@ int main(int argc, char *argv[])
         {
             fatal_error();
         }
-        for (int i = 0; i < nfds; ++i)
+        for (int i = 0; i < nfds; ++i) // check all fds for events
         {
-            if (pfds[i].revents & POLLIN)
+            if (pfds[i].revents & POLLIN) // if this fd has event
             {
-                if (pfds[i].fd == sockfd)
+                if (pfds[i].fd == sockfd) // if event on server socket
                 {
                     //new connection
                     //accept() the connection → get client_fd
@@ -158,13 +157,12 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-                else
+                else // if event on client socket
                 {
-                    //client msg or disconnection
                     int client_fd = pfds[i].fd;
                     char buffer[1024];
                     int bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-                    if (bytes > 0)
+                    if (bytes > 0) // client message
                     {
                         buffer[bytes] = '\0';  // null terminate
                         clients[client_fd].buf = str_join(clients[client_fd].buf, buffer);
@@ -184,7 +182,7 @@ int main(int argc, char *argv[])
                             free(msg);
                         }
                     }
-                    else
+                    else // client disconnected or error
                     {
                         // disconnect
                         char msg[128];
@@ -204,7 +202,8 @@ int main(int argc, char *argv[])
                         close(client_fd);
                     }
                 }
-            }          
+            }
+            // else: no events, do nothing         
         }
     }
     

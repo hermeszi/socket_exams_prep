@@ -92,3 +92,30 @@ int main() {
     else
         printf("server acccept the client...\n");
 }
+
+//  while (1)
+//     {
+//         if (poll(pfds, nfds, -1) < 0)
+//         {
+//             fatal_error();
+//         }
+//         for (int i = 0; i < nfds; ++i)
+//         {
+//             if (pfds[i].revents & POLLIN)
+//             {
+//                 if (pfds[i].fd == sockfd)
+//                 {
+//                     /
+//                 }
+//                 else
+//                 {
+//                     //client msg or disconnection
+  
+//              }
+//              else
+//              {
+ 
+//              }
+//           }
+//      }          
+
