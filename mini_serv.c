@@ -96,14 +96,10 @@ int main(int argc, char *argv[])
   
 	// Binding newly created socket to given IP and verification 
 	if ((bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) != 0)
-    {
         fatal_error();
-	}
 
 	if (listen(sockfd, 10) != 0)
-    {
         fatal_error();
-	}
 
     t_client        clients[1024];  // indexed by fd
     struct pollfd   pfds[1024];     // packed array for poll()
@@ -121,9 +117,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         if (poll(pfds, nfds, -1) < 0)
-        {
             fatal_error();
-        }
         for (int i = 0; i < nfds; ++i) // check all fds for events
         {
             if (pfds[i].revents & POLLIN) // if this fd has event
@@ -166,9 +160,15 @@ int main(int argc, char *argv[])
                     {
                         buffer[bytes] = '\0';  // null terminate
                         clients[client_fd].buf = str_join(clients[client_fd].buf, buffer);
+                        if (!clients[client_fd].buf)
+                            fatal_error();
                         char *msg;
-                        while (extract_message(&clients[client_fd].buf, &msg))
+                        int ret;
+                        while (ret = extract_message(&clients[client_fd].buf, &msg))
                         {
+                            if (ret < 0)
+                                fatal_error();
+
                             for (int j = 0; j < nfds; ++j)
                             {
                                 if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
