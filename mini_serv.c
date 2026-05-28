@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
                     clients[client_fd].buf = NULL;
 
                     char msg[128];
-                    snprintf(msg, sizeof(msg), "server: client %d just arrived\n", clients[client_fd].id);
+                    sprintf(msg, "server: client %d just arrived\n", clients[client_fd].id);
                     for (int j = 0; j < nfds; ++j)
                     {
                         if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
                                 if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
                                 {
                                     char prefix[64];
-                                    snprintf(prefix, sizeof(prefix), "client %d: ", clients[client_fd].id);
+                                    sprintf(prefix, "client %d: ", clients[client_fd].id);
                                     send(pfds[j].fd, prefix, strlen(prefix), 0);
                                     send(pfds[j].fd, msg, strlen(msg), 0);
                                 }
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
                     {
                         // disconnect
                         char msg[128];
-                        snprintf(msg, sizeof(msg), "server: client %d just left\n", clients[client_fd].id);
+                        sprintf(msg, "server: client %d just left\n", clients[client_fd].id);
                         for (int j = 0; j < nfds; ++j)
                         {
                             if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
                             }
                         }
                         free(clients[client_fd].buf);
-                        bzero(&clients[client_fd], sizeof(t_client));
+                        bzero(&clients[client_fd], sizeof(t_client));// size of the struct, not the pointer
                         pfds[i] = pfds[nfds - 1];
                         nfds--;
                         i--;
