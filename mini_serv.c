@@ -163,12 +163,11 @@ int main(int argc, char *argv[])
                         if (!clients[client_fd].buf)
                             fatal_error();
                         char *msg;
-                        int ret;
-                        while (ret = extract_message(&clients[client_fd].buf, &msg))
+                        int ret = extract_message(&clients[client_fd].buf, &msg);
+                        if (ret < 0)
+                            fatal_error();
+                        while (ret > 0) // while there are complete messages
                         {
-                            if (ret < 0)
-                                fatal_error();
-
                             for (int j = 0; j < nfds; ++j)
                             {
                                 if (pfds[j].fd != client_fd && pfds[j].fd != sockfd)
@@ -180,7 +179,12 @@ int main(int argc, char *argv[])
                                 }
                             }
                             free(msg);
+                            ret = extract_message(&clients[client_fd].buf, &msg);
+                            if (ret < 0)
+                                fatal_error();
                         }
+                        if (msg)
+                            free(msg); // free any leftover message (incomplete)
                     }
                     else // client disconnected or error
                     {
